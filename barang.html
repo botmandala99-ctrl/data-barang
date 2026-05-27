@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <title>DATA BARANG - Apotek Bali Bagas Medika</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
@@ -7,17 +7,9 @@ body{background:#f0f2f5;color:#333;padding:8px}
 .c{max-width:1300px;margin:0 auto}
 .h{background:linear-gradient(135deg,#1a73e8,#0d47a1);color:#fff;padding:12px 15px;border-radius:10px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
 .h h1{font-size:14px}
-
-/* TAB NAV - pake link */
 .nav{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap}
-.nav a{display:inline-block;padding:7px 10px;border-radius:6px;font-weight:600;font-size:11px;text-decoration:none;background:#e8eaf6;color:#1a73e8}
-.nav a.on,.nav a:focus{background:#1a73e8;color:#fff}
-
-/* TAB CONTENT - pake :target */
-.tc{display:none}
-.tc:target{display:block}
-.tc#tb-barang{display:block}
-
+.nav a{display:inline-block;padding:7px 10px;border-radius:6px;font-weight:600;font-size:11px;text-decoration:none;background:#e8eaf6;color:#1a73e8;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.nav a.on{background:#1a73e8;color:#fff}
 table{width:100%;border-collapse:collapse;background:#fff;border-radius:8px;overflow-x:auto;font-size:11px}
 th{background:#1a73e8;color:#fff;padding:6px 4px;text-align:left;font-weight:600;position:sticky;top:0}
 td{padding:5px 4px;border-bottom:1px solid #eee;word-break:break-word}
@@ -36,10 +28,10 @@ tr:nth-child(even){background:#f8f9fa}
 <div class="h"><h1>DATA BARANG</h1><span>Apotek Bali Bagas Medika</span></div>
 
 <div class="nav">
-<a href="#tb-barang" id="btn-barang" class="on">BARANG</a>
-<a href="#tb-order" id="btn-order">ORDER</a>
-<a href="#tb-pareto" id="btn-pareto">PARETO</a>
-<a href="#tb-pbf" id="btn-pbf">PBF</a>
+<a href="javascript:;" onclick="st('barang',this)" class="on">BARANG</a>
+<a href="javascript:;" onclick="st('order',this)">ORDER</a>
+<a href="javascript:;" onclick="st('pareto',this)">PARETO</a>
+<a href="javascript:;" onclick="st('pbf',this)">PBF</a>
 </div>
 
 <div id="tb-barang" class="tc">
@@ -4567,5 +4559,22 @@ tr:nth-child(even){background:#f8f9fa}
 <tr><td>ROYAL PESONA INDONESIA, PT</td><td>1</td></tr>
 </tbody></table></div>
 </div>
+
+<style>
+.tc{display:none}
+.tc.on{display:block}
+#tb-barang.on{display:block}
+</style>
+
+<script>
+function st(t,b){
+ var a=document.querySelectorAll('.tc');
+ for(var i=0;i<a.length;i++)a[i].style.display='none';
+ var c=document.querySelectorAll('.nav a');
+ for(var i=0;i<c.length;i++)c[i].classList.remove('on');
+ document.getElementById('tb-'+t).style.display='block';
+ if(b)b.classList.add('on');
+}
+</script>
 
 </div></body></html>
