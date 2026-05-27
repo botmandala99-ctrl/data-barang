@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Rekening PBF - Apotek Bali Bagas Medika</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f2f5;color:#333;padding:10px}
+.container{max-width:800px;margin:0 auto}
+.header{background:linear-gradient(135deg,#1565c0,#0d47a1);color:white;padding:15px 20px;border-radius:12px;margin-bottom:15px;text-align:center}
+.header h1{font-size:16px}
+.header .sub{font-size:11px;opacity:0.9;margin-top:3px}
+.search-box{margin-bottom:15px}
+.search-box input{width:100%;padding:10px 14px;border:2px solid #ddd;border-radius:8px;font-size:14px;outline:none}
+.search-box input:focus{border-color:#1565c0}
+.pbf-card{background:white;border-radius:10px;padding:15px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
+.pbf-card h3{font-size:14px;color:#1565c0;margin-bottom:10px}
+.pbf-rek{display:flex;gap:10px;flex-wrap:wrap}
+.pbf-rek-item{background:#e3f2fd;padding:10px 14px;border-radius:8px;flex:1;min-width:200px}
+.pbf-rek-item .bank{font-size:11px;color:#1565c0;font-weight:600}
+.pbf-rek-item .norek{font-family:monospace;font-size:16px;color:#0d47a1;font-weight:700;margin:4px 0;display:block}
+.pbf-rek-item .an{font-size:11px;color:#666}
+.info{text-align:center;font-size:11px;color:#999;margin-top:20px}
+.copy-btn{font-size:10px;padding:3px 8px;border:1px solid #1565c0;border-radius:4px;color:#1565c0;cursor:pointer;background:white;margin-left:5px}
+.copy-btn:hover{background:#1565c0;color:white}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#333;color:white;padding:10px 20px;border-radius:8px;font-size:13px;display:none;z-index:99}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+  <h1>🏦 REKENING PBF</h1>
+  <div class="sub">Apotek Bali Bagas Medika</div>
+</div>
+
+<div class="search-box">
+  <input type="text" id="searchPbf" placeholder="🔍 Cari PBF..." onkeyup="filterPbf()">
+</div>
+
+<div id="pbfList"></div>
+
+<div class="info">Total 19 PBF • Tap norek untuk copy</div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const pbfData = [{"nama": "Anugerah Buana Alkesindo (ABA)", "singkat": "ABA", "mandiri": "1450012054199", "bca": "", "st charter": ""}, {"nama": "Antar Mitra Sembada (AMS)", "singkat": "AMS", "mandiri": "1450010975650", "bca": "", "st charter": ""}, {"nama": "PT Anugerah Pharmindo Lestari (APL)", "singkat": "APL", "mandiri": "", "bca": "", "st charter": "8559001980360457"}, {"nama": "PT Bina San Prima (BSP)", "singkat": "BSP", "mandiri": "1450010265409", "bca": "7730050822", "st charter": ""}, {"nama": "PT Delta Pusaka Indah", "singkat": "DPI", "mandiri": "", "bca": "1461438500", "st charter": ""}, {"nama": "PT Lab Medika Sejahtera (LMS)", "singkat": "LMS", "mandiri": "1420033155556", "bca": "8291001661", "st charter": ""}, {"nama": "PT Mensa Bina Sukses (MBS)", "singkat": "MBS", "mandiri": "1450006490649", "bca": "0403088495", "st charter": ""}, {"nama": "PT Mega Inter Distrindo (MID)", "singkat": "MID", "mandiri": "", "bca": "3190269603", "st charter": ""}, {"nama": "PT Merapi Pharmacon International (MPI)", "singkat": "MPI", "mandiri": "1020004451503", "bca": "", "st charter": ""}, {"nama": "PT Penta Valent", "singkat": "Penta", "mandiri": "", "bca": "0400435561", "st charter": ""}, {"nama": "PT Parit Padang Global (PPG)", "singkat": "PPG", "mandiri": "", "bca": "0402111176", "st charter": ""}, {"nama": "PT Sinar Mayuri", "singkat": "SinarMayuri", "mandiri": "", "bca": "0401882048", "st charter": ""}, {"nama": "Surya Sinar Berlian (SSB)", "singkat": "SSB", "mandiri": "", "bca": "2588882689", "st charter": ""}, {"nama": "PT Sapta Sari Tama (SST)", "singkat": "SST", "mandiri": "", "bca": "6690144423", "st charter": ""}, {"nama": "PT Tempo", "singkat": "Tempo", "mandiri": "", "bca": "0403080494", "st charter": ""}, {"nama": "PT Tiara Kencana", "singkat": "Tiara", "mandiri": "", "bca": "1462363642", "st charter": ""}, {"nama": "PT United Dico Citas (UDC)", "singkat": "UDC", "mandiri": "", "bca": "6690205520", "st charter": ""}, {"nama": "PT Victoria Care", "singkat": "Victoria", "mandiri": "1180007963373", "bca": "", "st charter": ""}, {"nama": "PT Anugrah Argon Medica (AAM)", "singkat": "AAM", "mandiri": "", "bca": "6690059833", "st charter": ""}];
+
+function renderPbf(list) {
+  var t = document.getElementById('pbfList');
+  t.innerHTML = '';
+  list.forEach(function(p) {
+    var rekHtml = '';
+    if(p.mandiri) rekHtml += '<div class="pbf-rek-item"><div class="bank">🏦 Bank Mandiri</div><span class="norek" onclick="copyRek(this,''+p.mandiri+'')">'+p.mandiri+'</span><div class="an">a/n '+p.nama+'</div></div>';
+    if(p.bca) rekHtml += '<div class="pbf-rek-item"><div class="bank">🏦 BCA</div><span class="norek" onclick="copyRek(this,''+p.bca+'')">'+p.bca+'</span><div class="an">a/n '+p.nama+'</div></div>';
+    if(p['st charter']) rekHtml += '<div class="pbf-rek-item"><div class="bank">🏦 Standard Chartered</div><span class="norek" onclick="copyRek(this,''+p['st charter']+'')">'+p['st charter']+'</span><div class="an">a/n '+p.nama+'</div></div>';
+    t.innerHTML += '<div class="pbf-card"><h3>'+p.nama+'</h3><div class="pbf-rek">'+rekHtml+'</div></div>';
+  });
+}
+
+function filterPbf() {
+  var q = document.getElementById('searchPbf').value.toLowerCase();
+  renderPbf(pbfData.filter(function(p) {
+    if(!q) return true;
+    return p.nama.toLowerCase().indexOf(q) >= 0 || 
+           (p.mandiri+'').indexOf(q) >= 0 || 
+           (p.bca+'').indexOf(q) >= 0 ||
+           (p.singkat+'').toLowerCase().indexOf(q) >= 0;
+  }));
+}
+
+function copyRek(el, norek) {
+  navigator.clipboard.writeText(norek).then(function() {
+    var toast = document.getElementById('toast');
+    toast.textContent = '✅ No Rek '+norek+' tersalin!';
+    toast.style.display = 'block';
+    setTimeout(function(){ toast.style.display = 'none'; }, 2000);
+  }).catch(function() {
+    alert('Norek: '+norek);
+  });
+}
+
+renderPbf(pbfData);
+</script>
+</body>
+</html>
