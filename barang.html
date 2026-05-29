@@ -9,7 +9,7 @@ body{background:#f0f2f5;color:#333;padding:6px}
 .nav{display:flex;gap:3px;margin-bottom:6px}
 .nav a{display:inline-block;padding:5px 8px;border-radius:5px;font-weight:600;font-size:10px;text-decoration:none;background:#e8eaf6;color:#1a73e8;cursor:pointer}
 .nav a.on{background:#1a73e8;color:#fff}
-table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #ccc;border-radius:6px;font-size:10px}
+table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #ccc;border-radius:6px;font-size:10px;table-layout:fixed}
 th{background:#1a73e8;color:#fff;padding:4px 3px;text-align:left;position:sticky;top:0;white-space:nowrap;font-size:9px}
 td{padding:3px;border:1px solid #ddd;word-break:break-word}
 tr:nth-child(even){background:#f8f9fa}
@@ -25,7 +25,12 @@ tr:nth-child(even){background:#f8f9fa}
 .tc{display:none}
 td:nth-child(1){max-width:200px;overflow:hidden}
 th:nth-child(1){max-width:200px}
-table td:first-child,table th:first-child{max-width:200px;overflow:hidden}
+table td:first-child,table th:first-child{max-width:200px;overflow:hidden;word-wrap:break-word}
+#tb-barang table td:nth-child(1),#tb-barang table th:nth-child(1){width:55%}
+#tb-barang table td:nth-child(2),#tb-barang table th:nth-child(2){width:20%}
+#tb-barang table td:nth-child(3),#tb-barang table th:nth-child(3){width:25%}
+#tb-order table td:nth-child(1),#tb-order table th:nth-child(1){width:50%}
+#tb-pareto table td:nth-child(1),#tb-pareto table th:nth-child(1){width:45%}
 </style>
 </head><body>
 <div class="h"><h1>&#x2695; DATA BARANG</h1><span style="font-size:9px">Bali Bagas Medika <span style="opacity:.6">| 29/05/26</span></span></div>
