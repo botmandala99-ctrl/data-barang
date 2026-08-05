@@ -3239,17 +3239,91 @@ function handleUpload(input){
  reader.onload=function(e){parseAndReplace(e.target.result);};
  reader.readAsText(file);
 }
+function _num(v){
+ if(v===undefined||v===null)return 0;
+ var s=String(v).trim();
+ if(!s)return 0;
+ // hapus 'Rp', spasi
+ s=s.replace(/Rp/gi,'').replace(/\s+/g,'').replace(/\./g,'');
+ s=s.replace(',','.');
+ var n=parseFloat(s);
+ return isNaN(n)?0:n;
+}
 function parseCSV(text){
  var lines=text.replace(/\r/g,'').split('\n').filter(function(l){return l.trim()!==''});
+ if(lines.length===0)return [];
+ // deteksi baris header (kolom pertama) untuk tahu urutan kolom
+ var header=lines[0].toLowerCase();
+ var hc=header.split(';').map(function(x){return x.trim();});
+ function hHas(re){for(var i=0;i<hc.length;i++){if(re.test(hc[i]))return true;}return false;}
+ var hasN=hHas(/nama|barang|name|item/);
+ var hasK=hHas(/kode|code|sku|barcode/);
+ var hasH=hHas(/hpp|harga|modal|purchase|cost/);
+ var hasS=hHas(/stok|stock|qty|jumlah/);
+ var dataStart=0;
+ if(hasN||hasK||hasH||hasS) dataStart=1;
  var items=[];
- for(var i=1;i<lines.length;i++){
+ for(var i=dataStart;i<lines.length;i++){
   var parts=lines[i].split(';');
-  if(parts.length<3) continue;
-  var name=parts[0].trim();
-  if(!name) continue;
-  var hpp=parseFloat(parts[1].replace(/\./g,'').replace(',','.'))||0;
-  var st=parseFloat(parts[2].replace(/\./g,'').replace(',','.'))||0;
-  items.push({n:name,hpp:hpp,st:st});
+  // cari nama: kolom yang bukan angka (atau kolom header 'nama')
+  var name='', kode='', hpp=0, st=0;
+  if(hasN&&hasK&&hasH&&hasS){
+   // header lengkap: petakan
+   var hi=lines[0].toLowerCase().split(';').map(function(x){return x.trim();});
+   function fi(re){for(var q=0;q<hi.length;q++){if(re.test(hi[q]))return q;}return -1;}
+   var ni=fi(/nama|barang|name/);
+   var ki=fi(/kode|code|sku/);
+   var pi=fi(/hpp|harga|modal/);
+   var si=fi(/stok|stock|qty/);
+   if(ni<0)ni=0; if(pi<0)pi=2; if(si<0)si=3; if(ki<0)ki=1;
+   name=(parts[ni]||'').trim();
+   kode=(parts[ki]||'').trim();
+   hpp=_num(parts[pi]);
+   st=_num(parts[si]);
+  } else {
+   // tanpa header / header parsial: cek pola kolom
+   // Asumsikan salah satu kolom berisi teks (nama), sisanya angka
+   var cells=parts.slice(0,4);
+   var nameIdx=-1;
+   for(var c=0;c<cells.length;c++){
+    var t=(cells[c]||'').trim();
+    if(t && isNaN(parseFloat(t.replace(/[Rp\s\.]/g,'').replace(',','.')))) { nameIdx=c; break; }
+   }
+   if(nameIdx<0) nameIdx=0;
+   // nama = kolom teks pertama; kode = kolom teks kedua (jika ada)
+   name=(cells[nameIdx]||'').trim();
+   var numCells=[];
+   for(var c=0;c<cells.length;c++){
+    if(c===nameIdx)continue;
+    var t=(cells[c]||'').trim();
+    if(t&&!isNaN(parseFloat(t.replace(/[Rp\s\.]/g,'').replace(',','.'))))numCells.push(c);
+   }
+   // numCells berisi kolom2 angka (hpp & stok, urut sesuai file)
+   var numVals=numCells.map(function(c){return _num(cells[c]);});
+   // coba tebak: kolom yang nilainya lebih besar / biasanya berkisar → hpp vs stok
+   // stok biasanya bilangan bulat kecil; hpp biasanya besar.
+   // Ambil: salah satu num = hpp, lainnya = stok
+   if(numVals.length>=2){
+    // asumsi: nilai dengan desimal atau lebih besar & lebih dari 100 = HPP
+    if(numVals[0]>=numVals[1]){ hpp=numVals[0]; st=numVals[1]; }
+    else { hpp=numVals[1]; st=numVals[0]; }
+   } else if(numVals.length===1){
+    hpp=numVals[0]; st=0;
+   }
+   // kode: kolom teks kedua (setelah nama) jika ada
+   var textCells=[];
+   for(var c=0;c<cells.length;c++){
+    var tt=(cells[c]||'').trim();
+    if(tt && isNaN(parseFloat(tt.replace(/[Rp\s\.]/g,'').replace(',','.')))) textCells.push(c);
+   }
+   if(textCells.length>1){
+    // kode = teks kedua
+    var kc=textCells[1];
+    kode=(cells[kc]||'').trim();
+   }
+  }
+  if(!name)continue;
+  items.push({n:name,k:kode,hpp:hpp,st:st});
  }
  return items;
 }
