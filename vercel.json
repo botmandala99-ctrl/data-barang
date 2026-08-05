@@ -1,8 +1,4 @@
 {
-  "version": 2,
-  "functions": {
-    "api/upload.js": { "maxDuration": 10 }
-  },
   "builds": [
     { "src": "api/upload.js", "use": "@vercel/node" },
     { "src": "*.html", "use": "@vercel/static" }
