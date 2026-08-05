@@ -2195,6 +2195,11 @@ tr:nth-child(even){background:#f8f9fa}
 <button class="fc" onclick="fp('C',this)">C (134)</button>
 <button style="flex:1;padding:3px 4px;border:1px solid #555;border-radius:4px;background:#fff;font-size:9px;font-weight:600;cursor:pointer;color:#555" onclick="fp('all',this)">ALL</button>
 </div>
+
+<div style="margin-bottom:6px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px">
+<button onclick="refreshPareto()" style="padding:8px 14px;border:none;border-radius:6px;background:linear-gradient(135deg,#2e7d32,#1b5e20);color:#fff;font-size:11px;font-weight:700;cursor:pointer;box-shadow:0 2px 4px rgba(46,125,50,.3)">&#x21BB;&#xFE0F; REFRESH PARETO</button>
+<span id="paStatus" style="font-size:9px;color:#666;margin-left:4px"></span>
+</div>
 <div class="sb"><input type="text" id="sp" placeholder="&#x1F50D; Cari pareto..." onkeypress="if(event.key==='Enter')sf('pt','sp')"><button onclick="sf('pt','sp')">Cari</button></div>
 <div class="tw"><table><thead><tr><th>Nama Barang</th><th>Qty</th><th>Total</th><th>% Kum</th><th>Kls</th></tr></thead><tbody id="pt">
 <tr class="cls-A"><td>VAL 5 MG</td><td class="r">2160</td><td class="r">9.5%</td><td class="r">Rp 64.800.000</td><td class="r">A</td></tr>
@@ -3449,5 +3454,52 @@ function renderPage(tid,page){
 
 initPagination('bt',25);initPagination('wt',25);
 initPagination('wt',25);
+
+/* ===== REFRESH PARETO (fetch spreadsheet, auto kelas ABC) ===== */
+function fmtRp(v){ return 'Rp ' + Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
+function refreshPareto(){
+ var st=document.getElementById('paStatus');
+ if(st) st.textContent='Memuat data...';
+ var btn=document.querySelector('button[onclick="refreshPareto()"]');
+ if(btn){btn.disabled=true;btn.style.opacity='0.6';}
+ fetch('/api/pareto')
+  .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+  .then(function(d){
+   if(!d.success){ if(st)st.textContent='Gagal: '+(d.error||'?'); return; }
+   renderPareto(d);
+   if(st) st.textContent='✔ ' + d.count + ' item • Kelas A:'+d.kelas.A+' B:'+d.kelas.B+' C:'+d.kelas.C;
+  })
+  .catch(function(e){ if(st)st.textContent='Gagal: '+e.message; })
+  .finally(function(){ if(btn){btn.disabled=false;btn.style.opacity='1';} });
+}
+function renderPareto(d){
+ var tb=document.getElementById('pt');
+ tb.innerHTML='';
+ for(var i=0;i<d.items.length;i++){
+  var it=d.items[i];
+  var tr=document.createElement('tr');
+  tr.className='cls-'+it.kls;
+  tr.innerHTML='<td>'+it.n+'</td><td class="r">'+it.q.toLocaleString('id-ID')+'</td><td class="r">'+it.cum.toFixed(1)+'%</td><td class="r">'+fmtRp(it.s)+'</td><td class="r">'+it.kls+'</td>';
+  tb.appendChild(tr);
+ }
+ // update statistik card
+ var box=document.getElementById('tb-pareto');
+ var vals=box.querySelectorAll('.cd .v');
+ if(vals.length>=4){
+  vals[0].textContent=d.count;
+  vals[1].textContent=d.kelas.A;
+  vals[2].textContent=d.kelas.B;
+  vals[3].textContent=d.kelas.C;
+ }
+ // update tombol filter A/B/C
+ var btns=box.querySelectorAll('.fb button');
+ if(btns.length>=3){
+  btns[0].textContent='A ('+d.kelas.A+')';
+  btns[1].textContent='B ('+d.kelas.B+')';
+  btns[2].textContent='C ('+d.kelas.C+')';
+ }
+ // re-init pagination jika ada
+ if(window.initPagination) initPagination('pt',25);
+}
 </script>
 </body></html><!-- deploy Thu Jul  2 11:11:39 AM CST 2026 -->
