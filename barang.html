@@ -3297,6 +3297,8 @@ function parseAndReplace(text){
 
 
 /* ===== PAGINATION (10 item) ===== */
+
+/* ===== PAGINATION (10 item) ===== */
 function initPagination(tid,pageSize){
  var tb=document.getElementById(tid);
  if(!tb)return;
@@ -3315,20 +3317,24 @@ function _filterMatch(tr,mode){
  var stok=td2?parseInt(td2.textContent.replace(/\./g,'').replace(/,/g,''))||0:0;
  return mode==='stok'?(stok>0):(mode==='kosong'?(stok===0):true);
 }
+function _pBtn(lbl,fn){
+ var b=document.createElement('button');
+ b.style.cssText='padding:4px 9px;border:1px solid #ccc;border-radius:4px;background:#fff;font-size:10px;cursor:pointer;margin:0 2px;';b.disabled&&(b.style.opacity='0.45',b.style.cursor='not-allowed');
+ b.textContent=lbl;
+ b.onclick=fn;
+ return b;
+}
 function renderPage(tid,page){
  var arr=window._origRows[tid];
  if(!arr)return;
  var size=window['_size_'+tid]||10;
  var total=arr.length;
- var pages=Math.max(1,Math.ceil(total/size));
- if(page<0)page=0;if(page>=pages)page=pages-1;
  var mode=(tid==='bt')?(window._filterMode||'all'):(tid==='wt'?(window._warnMode||'all'):'all');
- // lewati yang tidak match (utk filter), simpan index yg match
+ // filter
  var visible=[];
  for(var i=0;i<total;i++){
   var ok=_filterMatch(arr[i],mode);
   if(tid==='wt'&&mode!=='all'){
-   // warn filter by kelas: kelas ada di td[4]
    var kc=arr[i].getElementsByTagName('td')[4];
    var k=kc?kc.textContent.trim():'';
    ok=(mode==='all'||k===mode);
@@ -3337,22 +3343,31 @@ function renderPage(tid,page){
  }
  var vlen=visible.length;
  var vpages=Math.max(1,Math.ceil(vlen/size));
- // hide semua
+ if(page<0)page=0;if(page>=vpages)page=vpages-1;
+ // sembunyikan semua lalu tampilkan halaman
  for(var i=0;i<total;i++)arr[i].style.display='none';
- // show page dari visible
- var vstart=page*size, vend=Math.min(vstart+size,vlen);
- for(var vi=vstart;vi<vend;vi++)arr[visible[vi]].style.display='';
- // control
+ var vs=page*size, ve=Math.min(vs+size,vlen);
+ for(var vi=vs;vi<ve;vi++)arr[visible[vi]].style.display='';
+ // kontrol
  var ctrl=document.getElementById(tid+'-page');
- if(ctrl){
-  var shownStart=(page*size)+1, shownEnd=Math.min((page+1)*size,vlen);
-  var sh=shownEnd>0?(shownStart+'-'+shownEnd):'0';
-  ctrl.innerHTML='<button style="padding:4px 9px;border:1px solid #ccc;border-radius:4px;background:#fff;font-size:10px;cursor:pointer;" onclick="renderPage(\''+tid+'\','+(page-1)+')">&#9664; Prev</button> <span style="font-size:10px;color:#555;margin:0 6px">'+sh+' / '+vlen+' &bull; Hal '+(page+1)+'/'+vpages+'</span> <button style="padding:4px 9px;border:1px solid #ccc;border-radius:4px;background:#fff;font-size:10px;cursor:pointer;" onclick="renderPage(\''+tid+'\','+(page+1)+')">Next &#9654;</button>';
- }
+ if(!ctrl)return;
+ ctrl.innerHTML='';
+ var shownStart=vs+1, shownEnd=ve;
+ var sh=shownEnd>shownStart-1?(shownStart+'-'+shownEnd):'0';
+ var prev=_pBtn('◀ Prev',function(){if(page>0)renderPage(tid,page-1);});
+ var next=_pBtn('Next ▶',function(){if(page<vpages-1)renderPage(tid,page+1);});
+ if(page<=0)prev.disabled=true;
+ if(page>=vpages-1)next.disabled=true;
+ var lbl=document.createElement('span');
+ lbl.style.cssText='font-size:10px;color:#555;margin:0 6px;';
+ lbl.textContent=sh+' / '+vlen+' • Hal '+(page+1)+'/'+vpages;
+ ctrl.appendChild(prev);
+ ctrl.appendChild(lbl);
+ ctrl.appendChild(next);
  window['_page_'+tid]=page;
 }
 
-
 initPagination('bt',10);initPagination('wt',10);
+initPagination('wt',10);
 </script>
 </body></html><!-- deploy Thu Jul  2 11:11:39 AM CST 2026 -->
