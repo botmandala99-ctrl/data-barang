@@ -3271,7 +3271,7 @@ function renderBarang(items){
   var ada=items.filter(function(x){return x.st>0}).length;
   totalEls[1].textContent=ada;
  }
- initPagination('bt',10);renderPage('bt',0);
+ initPagination('bt',25);renderPage('bt',0);
 }
 function parseAndReplace(text){
  var status=document.getElementById('upStatus');
@@ -3367,7 +3367,7 @@ function renderPage(tid,page){
  window['_page_'+tid]=page;
 }
 
-initPagination('bt',10);initPagination('wt',10);
-initPagination('wt',10);
+initPagination('bt',25);initPagination('wt',25);
+initPagination('wt',25);
 </script>
 </body></html><!-- deploy Thu Jul  2 11:11:39 AM CST 2026 -->
