@@ -3610,11 +3610,35 @@ function collectBarangFromDOM(){
 }
 
 // panggil saat load: bangun Barang Habis dari data barang awal
+
+function loadBarang(){
+ return fetch('/api/barang')
+  .then(function(r){ return r.ok?r.json():Promise.reject(new Error('HTTP '+r.status)); })
+  .then(function(d){
+   if(!d.success || !d.items) throw new Error(d.error||'Data kosong');
+   window._dataBarang=d.items;
+   renderBarang(d.items);
+   // update statistik card & filter count
+   var box=document.getElementById('tb-barang');
+   var vals=box.querySelectorAll('.cd .v');
+   if(vals.length>=2){ vals[0].textContent=d.total; vals[1].textContent=d.ada; }
+   var btns=box.querySelectorAll('.fb button');
+   if(btns.length>=3){ btns[2].textContent='ALL'; }
+   return d;
+  });
+}
+
 function initWarnAuto(){
- ensurePareto(function(){
-  var items = window._dataBarang || collectBarangFromDOM();
-  window._dataBarang = items;
-  buildWarn(items);
+ // load data barang fresh dari API (bisa refresh baru), utk tab Barang
+ loadBarang().then(function(){
+  ensurePareto(function(){
+   var items=window._dataBarang||[];
+   buildWarn(items);
+  });
+ }).catch(function(){
+  // fallback ke DOM
+  var items=window._dataBarang||collectBarangFromDOM();
+  ensurePareto(function(){ buildWarn(items); });
  });
 }
 </script>

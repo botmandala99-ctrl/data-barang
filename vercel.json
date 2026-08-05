@@ -2,11 +2,13 @@
   "builds": [
     { "src": "api/upload.js", "use": "@vercel/node" },
     { "src": "api/pareto.js", "use": "@vercel/node" },
+    { "src": "api/barang.js", "use": "@vercel/node" },
     { "src": "*.html", "use": "@vercel/static" }
   ],
   "routes": [
     { "src": "/api/upload", "dest": "/api/upload.js" },
     { "src": "/api/pareto", "dest": "/api/pareto.js" },
+    { "src": "/api/barang", "dest": "/api/barang.js" },
     { "src": "/(.*)", "dest": "/barang.html" }
   ]
 }
