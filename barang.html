@@ -3453,7 +3453,6 @@ function renderPage(tid,page){
 }
 
 initPagination('bt',25);initPagination('wt',25);
-initPagination('wt',25);
 
 /* ===== REFRESH PARETO (fetch spreadsheet, auto kelas ABC) ===== */
 function fmtRp(v){ return 'Rp ' + Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
@@ -3498,8 +3497,7 @@ function renderPareto(d){
   btns[1].textContent='B ('+d.kelas.B+')';
   btns[2].textContent='C ('+d.kelas.C+')';
  }
- // re-init pagination jika ada
- if(window.initPagination) initPagination('pt',25);
+
 }
 </script>
 </body></html><!-- deploy Thu Jul  2 11:11:39 AM CST 2026 -->
