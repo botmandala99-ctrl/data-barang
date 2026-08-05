@@ -1,5 +1,14 @@
 {
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/barang.html" }
+  "version": 2,
+  "functions": {
+    "api/upload.js": { "maxDuration": 10 }
+  },
+  "builds": [
+    { "src": "api/upload.js", "use": "@vercel/node" },
+    { "src": "*.html", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/upload", "dest": "/api/upload.js" },
+    { "src": "/(.*)", "dest": "/barang.html" }
   ]
 }

@@ -58,7 +58,13 @@ tr:nth-child(even){background:#f8f9fa}
 <a href="javascript:;" onclick="st('pbf',this)">&#x1F3E6; PBF</a>
 </div>
 <div id="tb-barang" class="tc" style="display:block">
-<div class="g"><div class="cd"><div class="l">Total Barang</div><div class="v">2017</div></div><div class="cd"><div class="l">Ada Stok</div><div class="v">928</div></div></div>
+<div class="g"><div class="cd"><div class="l">Total Barang</div><div class="v">2017</div>
+<div style="margin-bottom:5px;display:flex;gap:3px;align-items:center;flex-wrap:wrap">
+<button onclick="document.getElementById('fileUp').click()" style="padding:6px 10px;border:none;border-radius:5px;background:#0d47a1;color:#fff;font-size:10px;font-weight:700;cursor:pointer">&#x2B06;&#xFE0F; UPLOAD CSV BARANG</button>
+<input type="file" id="fileUp" accept=".csv" style="display:none" onchange="handleUpload(this)">
+<span id="upStatus" style="font-size:9px;color:#666;margin-left:4px"></span>
+</div>
+</div><div class="cd"><div class="l">Ada Stok</div><div class="v">928</div></div></div>
 <div class="fb">
 <button class="fa" onclick="fs('barang','stok',this)" style="border-color:#2e7d32;color:#2e7d32">&#x2705; Ada Stok (928)</button>
 <button style="flex:1;padding:3px 4px;border:1px solid #c62828;border-radius:4px;background:#fff;font-size:9px;font-weight:600;cursor:pointer;color:#c62828" onclick="fs('barang','kosong',this)">&#x274C; Stok 0</button>
@@ -3136,5 +3142,71 @@ function fw(kl,btn){{
  var r=document.getElementById('wt').getElementsByTagName('tr');
  for(var i=0;i<r.length;i++)r[i].style.display=(kl==='all'||r[i].children[3].textContent.trim()===kl)?'':'none';
 }}
+
+/* ===== UPLOAD CSV BARANG (via serverless) ===== */
+function handleUpload(input){
+ var file=input.files[0];
+ if(!file){return;}
+ var status=document.getElementById('upStatus');
+ status.textContent='Membaca '+file.name+'...';
+ status.style.color='#666';
+ var reader=new FileReader();
+ reader.onload=function(e){parseAndReplace(e.target.result);};
+ reader.readAsText(file);
+}
+function parseCSV(text){
+ var lines=text.replace(/\r/g,'').split('\n').filter(function(l){return l.trim()!==''});
+ var items=[];
+ for(var i=1;i<lines.length;i++){
+  var parts=lines[i].split(';');
+  if(parts.length<3) continue;
+  var name=parts[0].trim();
+  if(!name) continue;
+  var hpp=parseFloat(parts[1].replace(/\./g,'').replace(',','.'))||0;
+  var st=parseFloat(parts[2].replace(/\./g,'').replace(',','.'))||0;
+  items.push({n:name,hpp:hpp,st:st});
+ }
+ return items;
+}
+function fmtN(x){return 'Rp '+Math.round(x).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.');}
+function rowClass(st){if(st<=0)return ' class="r"';else if(st<=3)return ' class="o"';return '';}
+function renderBarang(items){
+ var tb=document.getElementById('bt');
+ tb.innerHTML='';
+ for(var i=0;i<items.length;i++){
+  var it=items[i];
+  var r=document.createElement('tr');
+  r.innerHTML='<td>'+it.n+'</td><td'+rowClass(it.st)+'>'+Math.round(it.st)+'</td><td'+rowClass(it.st)+'>'+fmtN(it.hpp)+'</td>';
+  tb.appendChild(r);
+ }
+ var totalEls=document.querySelectorAll('#tb-barang .v');
+ if(totalEls.length>=2){
+  totalEls[0].textContent=items.length;
+  var ada=items.filter(function(x){return x.st>0}).length;
+  totalEls[1].textContent=ada;
+ }
+}
+function parseAndReplace(text){
+ var status=document.getElementById('upStatus');
+ var items=parseCSV(text);
+ if(items.length===0){status.textContent='CSV kosong / format salah (Nama;HPP;Stock)';status.style.color='#c62828';return;}
+ status.textContent='Memproses '+items.length+' item...';
+ renderBarang(items);
+ status.textContent='Mengirim ke server...';
+ fetch('/api/upload',{
+  method:'POST',
+  headers:{'Content-Type':'application/json'},
+  body:JSON.stringify({items:items})
+ }).then(function(r){return r.json();}).then(function(res){
+  if(res.success){
+   status.innerHTML='&#x2705; '+res.count+' item terupload! Deploy Vercel otomatis...';
+   status.style.color='#2e7d32';
+  }else{
+   status.textContent='Gagal: '+(res.error||'error');
+   status.style.color='#c62828';
+  }
+ }).catch(function(err){status.textContent='Error: '+err;status.style.color='#c62828';});
+}
+
 </script>
 </body></html><!-- deploy Thu Jul  2 11:11:39 AM CST 2026 -->
