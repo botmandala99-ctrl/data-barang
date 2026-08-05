@@ -3250,11 +3250,17 @@ function _num(v){
  return isNaN(n)?0:n;
 }
 function parseCSV(text){
+ // deteksi delimiter otomatis: koma (,) atau titik koma (;)
+ var delim=null;
+ var probe=text.replace(/\r/g,'').split('\n')[0]||'';
+ var c1=(probe.match(/,/g)||[]).length, c2=(probe.match(/;/g)||[]).length;
+ delim=(c2>c1)?';':',';
  var lines=text.replace(/\r/g,'').split('\n').filter(function(l){return l.trim()!==''});
+ function SPL(s){return s.split(delim);}
  if(lines.length===0)return [];
  // deteksi baris header (kolom pertama) untuk tahu urutan kolom
  var header=lines[0].toLowerCase();
- var hc=header.split(';').map(function(x){return x.trim();});
+ var hc=SPL(header).map(function(x){return x.trim();});
  function hHas(re){for(var i=0;i<hc.length;i++){if(re.test(hc[i]))return true;}return false;}
  var hasN=hHas(/nama|barang|name|item/);
  var hasK=hHas(/kode|code|sku|barcode/);
@@ -3264,12 +3270,12 @@ function parseCSV(text){
  if(hasN||hasK||hasH||hasS) dataStart=1;
  var items=[];
  for(var i=dataStart;i<lines.length;i++){
-  var parts=lines[i].split(';');
+  var parts=SPL(lines[i]);
   // cari nama: kolom yang bukan angka (atau kolom header 'nama')
   var name='', kode='', hpp=0, st=0;
   if(hasN&&hasK&&hasH&&hasS){
    // header lengkap: petakan
-   var hi=lines[0].toLowerCase().split(';').map(function(x){return x.trim();});
+   var hi=SPL(lines[0].toLowerCase()).map(function(x){return x.trim();});
    function fi(re){for(var q=0;q<hi.length;q++){if(re.test(hi[q]))return q;}return -1;}
    var ni=fi(/nama|barang|name/);
    var ki=fi(/kode|code|sku/);
