@@ -3363,7 +3363,9 @@ function parseAndReplace(text){
  var items=parseCSV(text);
  if(items.length===0){status.textContent='CSV kosong / format salah (Nama;HPP;Stock)';status.style.color='#c62828';return;}
  status.textContent='Memproses '+items.length+' item...';
+ window._dataBarang=items;
  renderBarang(items);
+ buildWarn(items);
  status.textContent='Mengirim ke server...';
  fetch('/api/upload',{
   method:'POST',
@@ -3453,6 +3455,7 @@ function renderPage(tid,page){
 }
 
 initPagination('bt',25);initPagination('wt',25);
+setTimeout(initWarnAuto,200);
 
 /* ===== REFRESH PARETO (fetch spreadsheet, auto kelas ABC) ===== */
 function fmtRp(v){ return 'Rp ' + Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
@@ -3497,7 +3500,122 @@ function renderPareto(d){
   btns[1].textContent='B ('+d.kelas.B+')';
   btns[2].textContent='C ('+d.kelas.C+')';
  }
+ // simpan map pareto untuk kelas Barang Habis
+ var map={k:{},n:{}};
+ for(var i=0;i<d.items.length;i++){
+  var it=d.items[i];
+  if(it.k) map.k[it.k.toUpperCase().trim()]=it.kls;
+  if(it.n) map.n[it.n.toUpperCase().trim()]=it.kls;
+ }
+ window._paretoMap=map;
+ // rebuild Barang Habis dengan kelas terbaru
+ if(window._dataBarang) buildWarn(window._dataBarang);
+}
 
+/* ===== BARANG HABIS OTOMATIS (stok<=5, kelas dari pareto) ===== */
+window._warnThreshold = 5;
+window._paretoMap = null; // {name->kls, kode->kls}
+
+function ensurePareto(cb){
+ if(window._paretoMap){ if(cb)cb(); return; }
+ fetch('/api/pareto')
+  .then(function(r){ return r.ok?r.json():Promise.reject(new Error('HTTP '+r.status)); })
+  .then(function(d){
+   var map={k:{},n:{}};
+   if(d.success && d.items){
+    for(var i=0;i<d.items.length;i++){
+     var it=d.items[i];
+     if(it.k) map.k[it.k.toUpperCase().trim()]=it.kls;
+     if(it.n) map.n[it.n.toUpperCase().trim()]=it.kls;
+    }
+   }
+   window._paretoMap=map;
+   if(cb)cb();
+  })
+  .catch(function(){ window._paretoMap={k:{},n:{}}; if(cb)cb(); });
+}
+
+function _klsOf(kode, nama){
+ if(!window._paretoMap) return 'C';
+ var mk=window._paretoMap.k, mn=window._paretoMap.n;
+ if(kode && mk[kode.toUpperCase().trim()]) return mk[kode.toUpperCase().trim()];
+ if(nama && mn[nama.toUpperCase().trim()]) return mn[nama.toUpperCase().trim()];
+ return 'C';
+}
+
+function buildWarn(items){
+ var thr=window._warnThreshold||5;
+ var filtered=[];
+ for(var i=0;i<items.length;i++){
+  var it=items[i];
+  if(it.st<=thr){
+   filtered.push({ n:it.n, k:it.k||'', st:it.st, hpp:it.hpp, kls:_klsOf(it.k,it.n) });
+  }
+ }
+ // urut: prioritas A > B > C, lalu stok menaik
+ filtered.sort(function(a,b){
+  var o={A:0,B:1,C:2};
+  if(o[a.kls]!==o[b.kls]) return o[a.kls]-o[b.kls];
+  return a.st-b.st;
+ });
+ var tb=document.getElementById('wt');
+ tb.innerHTML='';
+ if(filtered.length===0){ tb.innerHTML='<tr><td colspan="5">Semua stok aman, tidak ada yang menipis</td></tr>'; }
+ for(var i=0;i<filtered.length;i++){
+  var x=filtered[i];
+  var tr=document.createElement('tr');
+  tr.className='cls-'+x.kls;
+  tr.innerHTML='<td>'+x.n+'</td><td>'+(x.k||'')+'</td><td class="r">'+x.st+'</td><td class="r">'+fmtRp(x.hpp)+'</td><td class="r">'+x.kls+'</td>';
+  tb.appendChild(tr);
+ }
+ // update card & nav & tombol filter
+ var box=document.getElementById('tb-warn');
+ var v=box.querySelector('.cd .v');
+ if(v) v.textContent=filtered.length+' item';
+ var nav=document.querySelector('.nav a[onclick*="st(\'warn\'"]');
+ if(nav){ var m=nav.textContent.replace(/\(\d+\)/,''); nav.textContent=m+' ('+filtered.length+')'; }
+ // update tombol filter A/B/C count
+ var nA=filtered.filter(function(x){return x.kls==='A';}).length;
+ var nB=filtered.filter(function(x){return x.kls==='B';}).length;
+ var nC=filtered.filter(function(x){return x.kls==='C';}).length;
+ var btns=box.querySelectorAll('.fb button');
+ if(btns.length>=4){
+  btns[0].textContent='A ('+nA+')';
+  btns[1].textContent='B ('+nB+')';
+  btns[2].textContent='C ('+nC+')';
+ }
+ // reset filter ke all
+ window._warnMode='all';
+ var allb=box.querySelector('.fb button[onclick*="\'all\'"]');
+ if(allb){ var bs=allb.parentNode.getElementsByTagName('button'); for(var i2=0;i2<bs.length;i2++)bs[i2].className=bs[i2].className.replace(/\bon\b/g,''); allb.className+=' on'; }
+ if(window.initPagination) initPagination('wt',25);
+}
+
+function collectBarangFromDOM(){
+ // ambil data barang dari tbody bt (yang sudah dirender)
+ var tb=document.getElementById('bt');
+ if(!tb) return [];
+ var out=[];
+ var rows=tb.getElementsByTagName('tr');
+ for(var i=0;i<rows.length;i++){
+  var tds=rows[i].getElementsByTagName('td');
+  if(tds.length<4) continue;
+  var n=tds[0].textContent.trim();
+  var k=tds[1].textContent.trim();
+  var st=parseInt(tds[2].textContent.replace(/\./g,'').replace(/,/g,''))||0;
+  var hpp=parseFloat(tds[3].textContent.replace(/[Rp\s\.]/g,'').replace(',','.'))||0;
+  out.push({n:n,k:k,st:st,hpp:hpp});
+ }
+ return out;
+}
+
+// panggil saat load: bangun Barang Habis dari data barang awal
+function initWarnAuto(){
+ ensurePareto(function(){
+  var items = window._dataBarang || collectBarangFromDOM();
+  window._dataBarang = items;
+  buildWarn(items);
+ });
 }
 </script>
 </body></html><!-- deploy Thu Jul  2 11:11:39 AM CST 2026 -->
